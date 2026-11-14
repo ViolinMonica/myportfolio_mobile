@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+/// Halaman utama MyPortfolio: kartu identitas pemilik di atas
+/// dan kisi tombol aksi portofolio di bawahnya.
 class MyHomePage extends StatelessWidget {
   MyHomePage({super.key});
   final String npm = "2506551794";
@@ -66,7 +68,7 @@ class MyHomePage extends StatelessWidget {
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                     crossAxisCount: 3,
-                    // shrinkWrap agar ukuran kisi menyesuaikan tinggi konten anak.
+                    // shrinkWrap agar tinggi kisi menyesuaikan isi, karena berada di dalam Column.
                     shrinkWrap: true,
                     children: items.map((ItemHomepage item) {
                       return ItemCard(item);
@@ -82,8 +84,9 @@ class MyHomePage extends StatelessWidget {
   }
 }
 
+/// Kartu informasi profil yang menampilkan judul ([title]) dan isinya ([content]),
+/// misalnya NPM, nama, atau kelas.
 class InfoCard extends StatelessWidget {
-  // Kartu informasi yang menampilkan judul (title) dan isi (content).
   final String title;
   final String content;
 
@@ -114,6 +117,10 @@ class InfoCard extends StatelessWidget {
   }
 }
 
+/// Model data untuk satu tombol aksi di halaman utama.
+///
+/// Warna disimpan per item ([color]), sehingga [ItemCard] cukup membaca
+/// `item.color` tanpa percabangan if-else untuk tiap tombol.
 class ItemHomepage {
   final String name;
   final IconData icon;
@@ -122,6 +129,8 @@ class ItemHomepage {
   ItemHomepage(this.name, this.icon, this.color);
 }
 
+/// Tombol aksi berbentuk kartu. Saat ditekan, kartu menampilkan SnackBar
+/// yang warna dan ikonnya sama dengan tombol yang ditekan.
 class ItemCard extends StatelessWidget {
   final ItemHomepage item;
 
@@ -133,14 +142,33 @@ class ItemCard extends StatelessWidget {
       // Warna latar unik per tombol, diambil dari atribut color pada ItemHomepage.
       color: item.color,
       borderRadius: BorderRadius.circular(12),
+      // clipBehavior agar efek ripple InkWell ikut terpotong mengikuti sudut melengkung.
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         // Aksi ketika kartu ditekan oleh pengguna.
         onTap: () {
-          // Menampilkan SnackBar dengan pesan interaktif.
+          // Tutup SnackBar sebelumnya agar pesan baru langsung muncul,
+          // lalu tampilkan SnackBar melayang dengan warna dan ikon tombol terkait.
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(
-              SnackBar(content: Text("Kamu telah menekan tombol ${item.name}!"))
+              SnackBar(
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: item.color,
+                duration: const Duration(seconds: 2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                content: Row(
+                  children: [
+                    Icon(item.icon, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text("Kamu telah menekan tombol ${item.name}!"),
+                    ),
+                  ],
+                ),
+              ),
             );
         },
         child: Container(
