@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';   
+import 'package:flutter/material.dart';
+import 'package:myportfolio_mobile/screens/experience_form.dart';
+import 'package:myportfolio_mobile/screens/project_form.dart';
 import 'package:myportfolio_mobile/widgets/left_drawer.dart';
 import 'package:myportfolio_mobile/widgets/project_card.dart';
 /// Halaman utama MyPortfolio: kartu identitas pemilik di atas
@@ -11,8 +13,10 @@ class MyHomePage extends StatelessWidget {
 
   final List<ItemHomepage> items = [
       ItemHomepage("Lihat Proyek", Icons.folder, Colors.blue),
-      ItemHomepage("Tambah Proyek", Icons.add_circle, Colors.green),
-      ItemHomepage("Tambah Pengalaman", Icons.work, Colors.orange),
+      ItemHomepage("Tambah Proyek", Icons.add_circle, Colors.green,
+          page: () => const ProjectFormPage()),
+      ItemHomepage("Tambah Pengalaman", Icons.work, Colors.orange,
+          page: () => const ExperienceFormPage()),
       ItemHomepage("Logout", Icons.logout, Colors.red),
   ];
   @override
@@ -131,12 +135,22 @@ class InfoCard extends StatelessWidget {
 
 /// Model data untuk satu tombol aksi di halaman utama.
 ///
-/// Warna disimpan per item ([color]), sehingga [ItemCard] cukup membaca
-/// `item.color` tanpa percabangan if-else untuk tiap tombol.
+/// Semua yang membedakan satu tombol dengan tombol lain disimpan di sini:
+/// label ([name]), ikon ([icon]), warna ([color]), dan halaman tujuan ([page]).
+/// Dengan begitu [ItemCard] cukup membaca atribut item, tanpa percabangan
+/// if-else atau `switch` berdasarkan teks label. Mengganti label tombol tidak
+/// akan merusak navigasi, dan menambah tombol baru cukup menambah satu baris
+/// di daftar `items` pada [MyHomePage].
 class ItemHomepage {
   final String name;
   final IconData icon;
   final Color color;
 
-  ItemHomepage(this.name, this.icon, this.color);
+  /// Pembuat halaman yang dibuka saat kartu ditekan, atau `null` kalau tombol
+  /// hanya menampilkan SnackBar (mis. Lihat Proyek dan Logout yang belum punya
+  /// halaman). Berupa fungsi, bukan widget jadi, supaya halaman baru dibuat
+  /// saat kartu ditekan dan form selalu mulai dalam keadaan kosong.
+  final Widget Function()? page;
+
+  ItemHomepage(this.name, this.icon, this.color, {this.page});
 }
