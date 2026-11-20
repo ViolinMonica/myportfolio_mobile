@@ -34,7 +34,8 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
             'Add Project Form',
           ),
         ),
-        backgroundColor: Colors.indigo,
+        // Warna primer tema, sama dengan AppBar halaman utama dan form Pengalaman.
+        backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
       ),
       drawer: const LeftDrawer(),
@@ -165,7 +166,9 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                   padding: const EdgeInsets.all(8.0),
                   child: ElevatedButton(
                     style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all(Colors.indigo),
+                      backgroundColor: WidgetStateProperty.all(
+                        Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {

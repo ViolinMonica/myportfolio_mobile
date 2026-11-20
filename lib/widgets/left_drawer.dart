@@ -11,11 +11,12 @@ class LeftDrawer extends StatelessWidget {
     return Drawer(
       child: ListView(
         children: [
-          const DrawerHeader(
+          DrawerHeader(
+            // Warna primer tema, supaya header drawer serasi dengan AppBar.
             decoration: BoxDecoration(
-              color: Colors.indigo,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            child: Column(
+            child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
