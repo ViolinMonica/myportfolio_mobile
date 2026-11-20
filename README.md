@@ -59,6 +59,9 @@ Aplikasi mobile Flutter untuk portofolio pribadi saya. Proyek ini lanjutan dari 
 - **Penghitung karakter** (`maxLength: 255`) di field Judul, sesuai batas di model.
 - **Widget test** (`flutter test`) di layar 390 × 844 untuk semua langkah di Petunjuk Pengujian: buka dari kartu dan drawer, kembali ke Home, judul spasi saja / deskripsi kosong / tanggal selesai belum dipilih ditolak, input valid tampil di dialog, OK kembali ke form.
 - **Perbaikan overflow di layar ponsel.** Saat dites di lebar 390 px, baris `InfoCard` dan label kartu 2 baris ternyata overflow. Sekarang `InfoCard` dibagi rata dengan `Expanded`, label kartu dibatasi 2 baris, dan halaman utama bisa digulir.
+- **Navigasi kartu dipisah ke model.** Halaman tujuan tiap kartu disimpan di `ItemHomepage.page`, bukan dipilih dari teks label lewat `switch`. Mengganti label tombol tidak merusak navigasi, dan menambah kartu baru cukup satu baris di `menu.dart`.
+- **Satu sumber warna.** AppBar, tombol Simpan, dan header drawer di semua halaman memakai `Theme.of(context).colorScheme.primary` dari `seedColor` di `main.dart`, bukan `Colors.indigo` yang ditulis langsung.
+- **Docstring (`///`) di semua class**, termasuk alasan desainnya (mis. kenapa Home di drawer memakai `pushReplacement` sedangkan opsi form memakai `push`).
 
 ## Cara Menguji Tugas 8
 
@@ -178,7 +181,7 @@ Di Chrome: buka **Tambah Pengalaman** dari kartu aksi dan dari drawer, tekan **S
 
 ---
 
-## AI Disclosure
+## AI Disclosure Tugas 7
 
 - **Tools:** Claude Code (Claude Opus 5.5) di VS Code.
 - **Bagian yang dibantu AI:**
@@ -210,6 +213,8 @@ log chat AI: https://drive.google.com/file/d/1QEMrrWYWgrUNR6VqchNJBVp8bKHDEykD/v
   - Menulis widget test di `test/widget_test.dart` dan menjalankan `flutter analyze` serta `flutter test`.
   - Menyusun draf jawaban reflektif Tugas 8 dan bagian README di atas.
 - **Strategi prompting:** memberi link soal langsung supaya AI membaca checklist dan rubrik aslinya, lalu meminta AI menguji hasilnya (widget test dan tampilan di Chrome selebar ponsel), bukan hanya menulis kode.
+
+log chat AI: https://drive.google.com/file/d/1bZrYR2nBua0wzANNJHX7jilCes05f7gX/view?usp=sharing
 
 #### Keterbatasan AI dan perbaikan
 
