@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:myportfolio_mobile/screens/education_form.dart';
+import 'package:myportfolio_mobile/screens/experience_form.dart';
 import 'package:myportfolio_mobile/screens/project_form.dart';
 import 'package:myportfolio_mobile/screens/menu.dart';
 
@@ -46,7 +46,7 @@ class ItemCard extends StatelessWidget {
           // jadi pengguna bisa kembali dengan tombol back bawaan.
           final Widget? page = switch (item.name) {
             "Tambah Proyek" => const ProjectFormPage(),
-            "Tambah Edukasi" => const EducationFormPage(),
+            "Tambah Pengalaman" => const ExperienceFormPage(),
             _ => null,
           };
           if (page != null) {
