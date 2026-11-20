@@ -12,6 +12,7 @@ class MyHomePage extends StatelessWidget {
   final List<ItemHomepage> items = [
       ItemHomepage("Lihat Proyek", Icons.folder, Colors.blue),
       ItemHomepage("Tambah Proyek", Icons.add_circle, Colors.green),
+      ItemHomepage("Tambah Edukasi", Icons.school, Colors.orange),
       ItemHomepage("Logout", Icons.logout, Colors.red),
   ];
   @override
@@ -30,19 +31,20 @@ class MyHomePage extends StatelessWidget {
           iconTheme: const IconThemeData(color: Colors.white)
       ),
       drawer: const LeftDrawer(),
-      // Body halaman utama dengan padding di sekelilingnya.
-      body: Padding(
+      // Body halaman utama dengan padding di sekelilingnya. Bisa digulir supaya
+      // kartu aksi tidak overflow di layar pendek atau jendela Chrome yang lebar.
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Baris horizontal untuk menampilkan 3 InfoCard secara sejajar.
+            // Expanded membagi lebar sama rata, jadi tidak overflow di layar 390 px.
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                InfoCard(title: 'NPM', content: npm),
-                InfoCard(title: 'Name', content: nama),
-                InfoCard(title: 'Class', content: kelas),
+                Expanded(child: InfoCard(title: 'NPM', content: npm)),
+                Expanded(child: InfoCard(title: 'Name', content: nama)),
+                Expanded(child: InfoCard(title: 'Class', content: kelas)),
               ],
             ),
 
@@ -70,12 +72,14 @@ class MyHomePage extends StatelessWidget {
                       final bool layarKecil = constraints.maxWidth < 600;
 
                       return GridView.count(
-                        primary: true,
+                        // Scroll diurus SingleChildScrollView di atas.
+                        primary: false,
+                        physics: const NeverScrollableScrollPhysics(),
                         padding: const EdgeInsets.all(20),
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
                         crossAxisCount: layarKecil ? 3 : 1,     // kecil: jejer (row), lebar: numpuk (column)
-                        childAspectRatio: layarKecil ? 1 : 5,   // biar kotak mode column nggak kegedean
+                        childAspectRatio: layarKecil ? 0.85 : 5, // kecil: sedikit lebih tinggi agar label 2 baris muat
                         shrinkWrap: true,
                         children: items.map((ItemHomepage item) {
                           return ItemCard(item);
@@ -107,9 +111,8 @@ class InfoCard extends StatelessWidget {
       // Memberikan efek bayangan kartu elevasi 2 unit.
       elevation: 2.0,
       child: Container(
-        // Menyesuaikan lebar kartu dengan proporsi layar (dibagi 3.5).
-        width: MediaQuery.of(context).size.width / 3.5,
-        padding: const EdgeInsets.all(16.0),
+        // Lebar diatur Expanded di MyHomePage; padding kecil agar teks muat di ponsel.
+        padding: const EdgeInsets.all(12.0),
         // Menyusun teks title dan content secara vertikal.
         child: Column(
           children: [
@@ -118,7 +121,7 @@ class InfoCard extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8.0),
-            Text(content),
+            Text(content, textAlign: TextAlign.center),
           ],
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myportfolio_mobile/screens/education_form.dart';
 import 'package:myportfolio_mobile/screens/project_form.dart';
 import 'package:myportfolio_mobile/screens/menu.dart';
 
@@ -41,10 +42,17 @@ class ItemCard extends StatelessWidget {
                 ),
               ),
             );
-          if (item.name == "Tambah Proyek") {
+          // Kartu yang punya halaman tujuan dibuka dengan Navigator.push(),
+          // jadi pengguna bisa kembali dengan tombol back bawaan.
+          final Widget? page = switch (item.name) {
+            "Tambah Proyek" => const ProjectFormPage(),
+            "Tambah Edukasi" => const EducationFormPage(),
+            _ => null,
+          };
+          if (page != null) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const ProjectFormPage()),
+              MaterialPageRoute(builder: (context) => page),
             );
           }
         },
@@ -60,10 +68,14 @@ class ItemCard extends StatelessWidget {
                   size: 30.0,
                 ),
                 const Padding(padding: EdgeInsets.all(3)),
-                Text(
-                  item.name,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white),
+                Flexible(
+                  child: Text(
+                    item.name,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             ),

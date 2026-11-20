@@ -24,6 +24,8 @@ Aplikasi mobile Flutter untuk portofolio pribadi saya. Proyek ini lanjutan dari 
 |---|---|
 | Tutorial 08 | Setup proyek Flutter, pisahkan `menu.dart` dari `main.dart`, buat `InfoCard` dan `ItemCard` |
 | Tugas 7 | Identitas sendiri di `InfoCard`, 3 tombol aksi (Lihat Proyek, Tambah Proyek, Logout) dengan warna berbeda, SnackBar saat tombol ditekan |
+| Tutorial 09 | Pisahkan halaman ke `lib/screens/` dan widget ke `lib/widgets/`, `LeftDrawer`, form Tambah Proyek dengan validasi dan dialog |
+| Tugas 8 | Form Tambah Edukasi (`education_form.dart`) dibuka dari kartu aksi dan drawer, validasi per field, dialog ringkasan, widget test |
 
 ## Fitur Tambahan (di luar checklist Tugas 7)
 
@@ -35,7 +37,30 @@ Aplikasi mobile Flutter untuk portofolio pribadi saya. Proyek ini lanjutan dari 
 ## Struktur Kode
 
 - `lib/main.dart`: bootstrap aplikasi (`main()` dan `MyApp` berisi `MaterialApp` serta tema).
-- `lib/menu.dart`: halaman utama (`MyHomePage`), kartu identitas (`InfoCard`), model tombol (`ItemHomepage`, dengan atribut `name`, `icon`, `color`), dan kartu tombol (`ItemCard`).
+- `lib/screens/menu.dart`: halaman utama (`MyHomePage`), kartu identitas (`InfoCard`), dan model tombol (`ItemHomepage`, dengan atribut `name`, `icon`, `color`).
+- `lib/screens/project_form.dart`: form Tambah Proyek (Tutorial 09).
+- `lib/screens/education_form.dart`: form Tambah Edukasi (Tugas 8).
+- `lib/widgets/left_drawer.dart`: drawer yang sama untuk semua halaman (Home, Add Project, Add Education).
+- `lib/widgets/project_card.dart`: kartu tombol aksi (`ItemCard`) beserta navigasinya.
+- `test/widget_test.dart`: widget test untuk skenario pengujian Tugas 8.
+
+## Fitur Tambahan Tugas 8 (di luar checklist)
+
+- **Tanggal pakai `showDatePicker()` + opsi "Masih berjalan".** Kalau dicentang, field Tanggal Selesai disembunyikan dan tidak divalidasi. Kalau tidak, tanggal selesai wajib dan tidak boleh sebelum tanggal mulai.
+- **IPK opsional dengan validasi rentang.** Boleh kosong, tapi kalau diisi harus angka 0.00 sampai 4.00 (koma juga diterima, misalnya `3,75`).
+- **Penghitung karakter** (`maxLength: 100`) di field teks, sesuai batas panjang di validator.
+- **Widget test** (`flutter test`) di layar 390 × 844 untuk semua langkah di Petunjuk Pengujian: buka dari kartu dan drawer, kembali ke Home, input kosong/spasi/IPK 4.5 ditolak, input valid tampil di dialog, OK kembali ke form.
+- **Perbaikan overflow di layar ponsel.** Saat dites di lebar 390 px, baris `InfoCard` dan label kartu 2 baris ternyata overflow. Sekarang `InfoCard` dibagi rata dengan `Expanded`, label kartu dibatasi 2 baris, dan halaman utama bisa digulir.
+
+## Cara Menguji Tugas 8
+
+```bash
+flutter analyze   # harus "No issues found!"
+flutter test      # menjalankan skenario pengujian di atas
+flutter run -d chrome
+```
+
+Di Chrome: buka **Tambah Edukasi** dari kartu aksi dan dari drawer, tekan **Simpan** dengan field kosong, lalu lengkapi isian dan tekan **Simpan** lagi. Pakai opsi **Home** di drawer untuk kembali ke halaman utama.
 
 ---
 
@@ -110,6 +135,37 @@ Aplikasi mobile Flutter untuk portofolio pribadi saya. Proyek ini lanjutan dari 
    - Mengubah struktur class, misalnya StatelessWidget diubah jadi StatefulWidget, atau mengubah enum dan generic type.
    - **Full restart** (stop lalu `flutter run` lagi) diperlukan saat menambah package baru di `pubspec.yaml`, mengubah kode native (Android/iOS), atau menambah asset baru.
 
+### Tugas 8
+
+1. **`Navigator.push()`, `Navigator.pushReplacement()`, dan `Navigator.pop()`**
+
+   Navigator menyimpan halaman dalam bentuk tumpukan (stack).
+   - `push()` menaruh halaman baru di atas tumpukan. Halaman lama tetap ada di bawahnya, jadi pengguna bisa kembali dengan tombol back.
+   - `pushReplacement()` mengganti halaman paling atas dengan halaman baru. Halaman lama dibuang, jadi tombol back tidak akan kembali ke sana.
+   - `pop()` membuang halaman paling atas dan kembali ke halaman di bawahnya. Ini juga dipakai untuk menutup dialog.
+
+   Kartu aksi **Tambah Edukasi** membuka form dengan `Navigator.push()` (di `ItemCard`), supaya tombol back perangkat membawa pengguna kembali ke halaman utama. Opsi **Home** di drawer memakai `Navigator.pushReplacement()` ke `MyHomePage`. Halaman yang sedang terbuka (misalnya form) diganti dengan halaman utama, sehingga form tidak tertinggal di tumpukan sebagai halaman yang bisa di-back.
+
+2. **Struktur `Scaffold`, `AppBar`, dan `Drawer`**
+
+   `Scaffold` adalah kerangka setiap halaman: `appBar` di atas, `drawer` di samping, dan `body` di tengah. Karena halaman utama, form proyek, dan form edukasi sama-sama memakai `Scaffold` dengan `AppBar` dan `LeftDrawer` yang sama, pengguna selalu menemukan judul dan menu navigasi di tempat yang sama. `LeftDrawer` cukup ditulis sekali di `lib/widgets/`, lalu dipakai di semua halaman. Kalau ada opsi baru, cukup ditambah di satu file.
+
+   Contoh warna tema: `AppBar` di halaman utama dan di form Tambah Edukasi sama-sama memakai `Theme.of(context).colorScheme.primary` (dari `seedColor: Colors.indigo` di `main.dart`). Tombol **Simpan** di form edukasi juga memakai warna yang sama. Kalau seed color diganti, ketiganya ikut berubah.
+
+3. **Tata letak form**
+
+   Form disusun satu kolom (`Column` dengan `crossAxisAlignment.stretch`), satu field per baris dari atas ke bawah, dengan tombol **Simpan** selebar layar di paling bawah. Susunan ini paling mudah dibaca dan diisi di layar ponsel yang sempit, dan urutannya mengikuti urutan pengisian (institusi, jenjang, prodi, tanggal, IPK).
+   - **Widget pengatur jarak:** `Padding` di `SingleChildScrollView` memberi jarak 16 px dari tepi layar, dan `SizedBox(height: 16)` memberi jarak antar-field, jadi field tidak menempel satu sama lain dan pesan error punya ruang.
+   - **Widget penggulir:** `SingleChildScrollView` membuat seluruh isi form bisa digulir. Saat papan ketik muncul, tinggi layar yang tersisa mengecil. Tanpa penggulir, field di bawah dan tombol Simpan akan tertutup atau overflow. `SafeArea` menjaga isi form tidak tertutup notch atau status bar.
+
+4. **`GlobalKey<FormState>`, `validator`, dan `validate()`**
+
+   - `GlobalKey<FormState>` (`_formKey`) adalah "pegangan" ke widget `Form`, sehingga kode di luar field bisa mengakses state form lewat `_formKey.currentState`.
+   - `validator` adalah fungsi di tiap `TextFormField` yang mengembalikan pesan error (String) kalau input salah, atau `null` kalau benar.
+   - Saat tombol **Simpan** ditekan, `_formKey.currentState!.validate()` menjalankan semua validator sekaligus. Field yang salah langsung menampilkan pesan error di bawahnya, dan `validate()` mengembalikan `false`, jadi dialog tidak ditampilkan. Dialog ringkasan hanya muncul kalau semua validator mengembalikan `null`.
+
+   Contoh nilai yang ditolak: IPK `4.5`. Field IPK memakai papan ketik angka (`TextInputType.numberWithOptions(decimal: true)`), tapi papan ketik hanya membatasi tombol yang muncul, bukan nilai yang masuk akal. Pengguna tetap bisa mengetik `4.5`, `3..2`, atau menempel teks lewat clipboard, dan di Chrome papan ketik fisik bisa mengetik huruf apa saja. Karena itu `_validateGpa` tetap memeriksa bahwa nilainya angka dan berada di rentang 0.00 sampai 4.00. Hal yang sama berlaku untuk nama institusi berisi spasi saja (`"   "`): tidak kosong secara teknis, tapi ditolak karena `trim()` membuatnya kosong.
+
 ---
 
 ## AI Disclosure
@@ -133,3 +189,21 @@ Aplikasi mobile Flutter untuk portofolio pribadi saya. Proyek ini lanjutan dari 
 - **Jawaban reflektif dari AI tetap harus dipahami.** Saya membaca ulang tiap jawaban dan mencocokkannya dengan kode saya (misalnya contoh `Theme.of(context)` dan `MediaQuery.of(context)`), bukan sekadar menyalin.
 
 log chat AI: https://drive.google.com/file/d/1QEMrrWYWgrUNR6VqchNJBVp8bKHDEykD/view?usp=sharing
+
+### AI Disclosure Tugas 8
+
+- **Tools:** Claude Code (Claude Opus 5.5) di VS Code.
+- **Bagian yang dibantu AI:**
+  - Membaca halaman soal Tugas 8 dan menyusun checklist pengerjaan.
+  - Menyelesaikan TODO Tutorial 09 yang tertinggal (routing Add Project di drawer, drawer di form proyek).
+  - Membuat `education_form.dart` (field, validator, date picker, dialog ringkasan), kartu aksi, dan opsi drawer baru.
+  - Menulis widget test di `test/widget_test.dart` dan menjalankan `flutter analyze` serta `flutter test`.
+  - Menyusun draf jawaban reflektif Tugas 8 dan bagian README di atas.
+- **Strategi prompting:** memberi link soal langsung supaya AI membaca checklist dan rubrik aslinya, lalu meminta AI menguji hasilnya (widget test dan tampilan di Chrome selebar ponsel), bukan hanya menulis kode.
+
+#### Keterbatasan AI dan perbaikan
+
+- **Bug layout lama baru ketahuan saat dites di lebar ponsel.** Widget test di 390 × 844 menunjukkan baris `InfoCard` overflow 0.3 px (lebar `MediaQuery / 3.5` ditambah margin kartu) dan label kartu 2 baris overflow. Ini sudah ada sejak Tugas 7 dan tidak terlihat di jendela lebar. Diperbaiki dengan `Expanded` dan batas baris, sehingga jawaban Tugas 7 nomor 5 tentang `MediaQuery` untuk lebar `InfoCard` sudah tidak sesuai dengan kode terbaru.
+- **Test bawaan Flutter (counter) sudah lama gagal** karena aplikasinya bukan counter lagi. AI menggantinya dengan test yang sesuai aplikasi.
+- **Asumsi tombol back.** Karena form punya drawer, `AppBar` menampilkan ikon menu, bukan panah back. Kembali ke halaman utama dilakukan lewat tombol back perangkat (`Navigator.push`) atau opsi Home di drawer, sesuai soal.
+- **Model Edukasi ditentukan sendiri.** AI tidak punya akses ke model Django portofolio saya, jadi field (institusi, jenjang, prodi, tanggal, IPK) dan aturan validasinya perlu saya cocokkan dengan model di web.
