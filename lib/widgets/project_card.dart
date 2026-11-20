@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:myportfolio_mobile/screens/experience_form.dart';
-import 'package:myportfolio_mobile/screens/project_form.dart';
 import 'package:myportfolio_mobile/screens/menu.dart';
 
+/// Kartu tombol aksi di kisi halaman utama.
+///
+/// Tampilan dan perilaku kartu sepenuhnya ditentukan oleh [ItemHomepage]:
+/// warna latar, ikon, label, dan halaman tujuan. Saat ditekan, kartu
+/// menampilkan SnackBar dengan warna dan ikon yang sama, lalu membuka
+/// `item.page` (kalau ada) dengan [Navigator.push].
 class ItemCard extends StatelessWidget {
   final ItemHomepage item;
 
@@ -42,17 +46,14 @@ class ItemCard extends StatelessWidget {
                 ),
               ),
             );
-          // Kartu yang punya halaman tujuan dibuka dengan Navigator.push(),
-          // jadi pengguna bisa kembali dengan tombol back bawaan.
-          final Widget? page = switch (item.name) {
-            "Tambah Proyek" => const ProjectFormPage(),
-            "Tambah Pengalaman" => const ExperienceFormPage(),
-            _ => null,
-          };
+          // Halaman tujuan diambil dari model (item.page), bukan dari teks label.
+          // Navigator.push() menumpuk halaman baru di atas halaman utama,
+          // jadi pengguna bisa kembali dengan tombol back bawaan perangkat.
+          final page = item.page;
           if (page != null) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => page),
+              MaterialPageRoute(builder: (context) => page()),
             );
           }
         },

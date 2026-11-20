@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:myportfolio_mobile/widgets/left_drawer.dart';
 
+/// Halaman formulir Tambah Proyek dari Tutorial 09.
+///
+/// Nama dan deskripsi proyek wajib diisi (ditolak kalau kosong atau hanya
+/// spasi), kategori dipilih dari daftar tetap, sedangkan teknologi dan tautan
+/// bersifat opsional. Saat **Save** ditekan, [FormState.validate] menjalankan
+/// semua validator; ringkasan isian hanya ditampilkan di dialog kalau semuanya
+/// lolos, dan form dikosongkan lagi setelah dialog ditutup.
 class ProjectFormPage extends StatefulWidget {
   const ProjectFormPage({super.key});
 
@@ -9,6 +16,7 @@ class ProjectFormPage extends StatefulWidget {
 }
 
 class _ProjectFormPageState extends State<ProjectFormPage> {
+  /// Kunci untuk mengakses [FormState] (validate dan reset) dari tombol Save.
   final _formKey = GlobalKey<FormState>();
 
   String _projectName = "";
@@ -34,7 +42,8 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
             'Add Project Form',
           ),
         ),
-        backgroundColor: Colors.indigo,
+        // Warna primer tema, sama dengan AppBar halaman utama dan form Pengalaman.
+        backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
       ),
       drawer: const LeftDrawer(),
@@ -165,7 +174,9 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                   padding: const EdgeInsets.all(8.0),
                   child: ElevatedButton(
                     style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all(Colors.indigo),
+                      backgroundColor: WidgetStateProperty.all(
+                        Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {

@@ -5,6 +5,11 @@ void main() {
   runApp(const MyApp());
 }
 
+/// Akar aplikasi MyPortfolio Mobile.
+///
+/// Tema dibuat sekali di sini dari `seedColor` indigo. Semua halaman mengambil
+/// warnanya lewat `Theme.of(context).colorScheme.primary`, jadi kalau warna
+/// portofolio ingin diganti cukup ubah satu baris ini.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
