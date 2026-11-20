@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:myportfolio_mobile/screens/menu.dart';
 
+/// Kartu tombol aksi di kisi halaman utama.
+///
+/// Tampilan dan perilaku kartu sepenuhnya ditentukan oleh [ItemHomepage]:
+/// warna latar, ikon, label, dan halaman tujuan. Saat ditekan, kartu
+/// menampilkan SnackBar dengan warna dan ikon yang sama, lalu membuka
+/// `item.page` (kalau ada) dengan [Navigator.push].
 class ItemCard extends StatelessWidget {
   final ItemHomepage item;
 

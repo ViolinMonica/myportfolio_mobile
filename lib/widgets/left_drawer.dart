@@ -3,6 +3,18 @@ import 'package:myportfolio_mobile/screens/experience_form.dart';
 import 'package:myportfolio_mobile/screens/menu.dart';
 import 'package:myportfolio_mobile/screens/project_form.dart';
 
+/// Drawer navigasi yang dipakai bersama oleh semua halaman
+/// (halaman utama, form Proyek, dan form Pengalaman).
+///
+/// Karena satu widget dipakai di semua `Scaffold`, opsi menu cukup ditambah
+/// di satu tempat dan langsung muncul di setiap halaman.
+///
+/// - **Home** memakai [Navigator.pushReplacement]: halaman saat ini diganti
+///   dengan halaman utama, sehingga form tidak tertinggal di tumpukan dan
+///   tombol back tidak membuka form lama lagi.
+/// - **Add Project** dan **Add Experience** memakai [Navigator.push]: form
+///   ditumpuk di atas halaman saat ini, jadi tombol back kembali ke halaman
+///   sebelumnya.
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
 
