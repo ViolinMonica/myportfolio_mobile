@@ -25,7 +25,7 @@ Aplikasi mobile Flutter untuk portofolio pribadi saya. Proyek ini lanjutan dari 
 | Tutorial 08 | Setup proyek Flutter, pisahkan `menu.dart` dari `main.dart`, buat `InfoCard` dan `ItemCard` |
 | Tugas 7 | Identitas sendiri di `InfoCard`, 3 tombol aksi (Lihat Proyek, Tambah Proyek, Logout) dengan warna berbeda, SnackBar saat tombol ditekan |
 | Tutorial 09 | Pisahkan halaman ke `lib/screens/` dan widget ke `lib/widgets/`, `LeftDrawer`, form Tambah Proyek dengan validasi dan dialog |
-| Tugas 8 | Form Tambah Edukasi (`education_form.dart`) dibuka dari kartu aksi dan drawer, validasi per field, dialog ringkasan, widget test |
+| Tugas 8 | Form Tambah Pengalaman (`experience_form.dart`, sesuai model `Experience` di web) dibuka dari kartu aksi dan drawer, validasi per field, dialog ringkasan, widget test |
 
 ## Fitur Tambahan (di luar checklist Tugas 7)
 
@@ -39,17 +39,25 @@ Aplikasi mobile Flutter untuk portofolio pribadi saya. Proyek ini lanjutan dari 
 - `lib/main.dart`: bootstrap aplikasi (`main()` dan `MyApp` berisi `MaterialApp` serta tema).
 - `lib/screens/menu.dart`: halaman utama (`MyHomePage`), kartu identitas (`InfoCard`), dan model tombol (`ItemHomepage`, dengan atribut `name`, `icon`, `color`).
 - `lib/screens/project_form.dart`: form Tambah Proyek (Tutorial 09).
-- `lib/screens/education_form.dart`: form Tambah Edukasi (Tugas 8).
-- `lib/widgets/left_drawer.dart`: drawer yang sama untuk semua halaman (Home, Add Project, Add Education).
+- `lib/screens/experience_form.dart`: form Tambah Pengalaman (Tugas 8).
+- `lib/widgets/left_drawer.dart`: drawer yang sama untuk semua halaman (Home, Add Project, Add Experience).
 - `lib/widgets/project_card.dart`: kartu tombol aksi (`ItemCard`) beserta navigasinya.
 - `test/widget_test.dart`: widget test untuk skenario pengujian Tugas 8.
 
 ## Fitur Tambahan Tugas 8 (di luar checklist)
 
-- **Tanggal pakai `showDatePicker()` + opsi "Masih berjalan".** Kalau dicentang, field Tanggal Selesai disembunyikan dan tidak divalidasi. Kalau tidak, tanggal selesai wajib dan tidak boleh sebelum tanggal mulai.
-- **IPK opsional dengan validasi rentang.** Boleh kosong, tapi kalau diisi harus angka 0.00 sampai 4.00 (koma juga diterima, misalnya `3,75`).
-- **Penghitung karakter** (`maxLength: 100`) di field teks, sesuai batas panjang di validator.
-- **Widget test** (`flutter test`) di layar 390 × 844 untuk semua langkah di Petunjuk Pengujian: buka dari kartu dan drawer, kembali ke Home, input kosong/spasi/IPK 4.5 ditolak, input valid tampil di dialog, OK kembali ke form.
+- **Field dan aturan validasi mengikuti model Django `Experience`** (`main/models.py` di repo `portfolio`):
+
+  | Field model | Input | Validasi |
+  |---|---|---|
+  | `title` (`CharField(max_length=255)`) | `TextFormField` | wajib, bukan spasi saja, maks. 255 karakter |
+  | `description` (`TextField`) | `TextFormField` multi-baris | wajib, bukan spasi saja |
+  | `category` (`EXPERIENCE_CHOICES`, default `full-time`) | `DropdownButtonFormField` | hanya 6 pilihan dari model |
+  | `ended_at` (boleh kosong = masih berjalan) | `showDatePicker()` + centang "Masih berjalan" | kalau tidak berjalan, tanggal wajib dan tidak boleh sebelum `started_at` |
+
+  `started_at` memakai `auto_now_add` (terisi otomatis saat disimpan), jadi tidak ada di form dan dianggap hari ini. `thumbnail` (upload gambar) belum dimasukkan karena materi minggu ini belum mencakup upload file.
+- **Penghitung karakter** (`maxLength: 255`) di field Judul, sesuai batas di model.
+- **Widget test** (`flutter test`) di layar 390 × 844 untuk semua langkah di Petunjuk Pengujian: buka dari kartu dan drawer, kembali ke Home, judul spasi saja / deskripsi kosong / tanggal selesai belum dipilih ditolak, input valid tampil di dialog, OK kembali ke form.
 - **Perbaikan overflow di layar ponsel.** Saat dites di lebar 390 px, baris `InfoCard` dan label kartu 2 baris ternyata overflow. Sekarang `InfoCard` dibagi rata dengan `Expanded`, label kartu dibatasi 2 baris, dan halaman utama bisa digulir.
 
 ## Cara Menguji Tugas 8
@@ -60,7 +68,7 @@ flutter test      # menjalankan skenario pengujian di atas
 flutter run -d chrome
 ```
 
-Di Chrome: buka **Tambah Edukasi** dari kartu aksi dan dari drawer, tekan **Simpan** dengan field kosong, lalu lengkapi isian dan tekan **Simpan** lagi. Pakai opsi **Home** di drawer untuk kembali ke halaman utama.
+Di Chrome: buka **Tambah Pengalaman** dari kartu aksi dan dari drawer, tekan **Simpan** dengan field kosong, lalu lengkapi isian dan tekan **Simpan** lagi. Pakai opsi **Home** di drawer untuk kembali ke halaman utama.
 
 ---
 
@@ -144,17 +152,17 @@ Di Chrome: buka **Tambah Edukasi** dari kartu aksi dan dari drawer, tekan **Simp
    - `pushReplacement()` mengganti halaman paling atas dengan halaman baru. Halaman lama dibuang, jadi tombol back tidak akan kembali ke sana.
    - `pop()` membuang halaman paling atas dan kembali ke halaman di bawahnya. Ini juga dipakai untuk menutup dialog.
 
-   Kartu aksi **Tambah Edukasi** membuka form dengan `Navigator.push()` (di `ItemCard`), supaya tombol back perangkat membawa pengguna kembali ke halaman utama. Opsi **Home** di drawer memakai `Navigator.pushReplacement()` ke `MyHomePage`. Halaman yang sedang terbuka (misalnya form) diganti dengan halaman utama, sehingga form tidak tertinggal di tumpukan sebagai halaman yang bisa di-back.
+   Kartu aksi **Tambah Pengalaman** membuka form dengan `Navigator.push()` (di `ItemCard`), supaya tombol back perangkat membawa pengguna kembali ke halaman utama. Opsi **Home** di drawer memakai `Navigator.pushReplacement()` ke `MyHomePage`. Halaman yang sedang terbuka (misalnya form) diganti dengan halaman utama, sehingga form tidak tertinggal di tumpukan sebagai halaman yang bisa di-back.
 
 2. **Struktur `Scaffold`, `AppBar`, dan `Drawer`**
 
-   `Scaffold` adalah kerangka setiap halaman: `appBar` di atas, `drawer` di samping, dan `body` di tengah. Karena halaman utama, form proyek, dan form edukasi sama-sama memakai `Scaffold` dengan `AppBar` dan `LeftDrawer` yang sama, pengguna selalu menemukan judul dan menu navigasi di tempat yang sama. `LeftDrawer` cukup ditulis sekali di `lib/widgets/`, lalu dipakai di semua halaman. Kalau ada opsi baru, cukup ditambah di satu file.
+   `Scaffold` adalah kerangka setiap halaman: `appBar` di atas, `drawer` di samping, dan `body` di tengah. Karena halaman utama, form proyek, dan form pengalaman sama-sama memakai `Scaffold` dengan `AppBar` dan `LeftDrawer` yang sama, pengguna selalu menemukan judul dan menu navigasi di tempat yang sama. `LeftDrawer` cukup ditulis sekali di `lib/widgets/`, lalu dipakai di semua halaman. Kalau ada opsi baru, cukup ditambah di satu file.
 
-   Contoh warna tema: `AppBar` di halaman utama dan di form Tambah Edukasi sama-sama memakai `Theme.of(context).colorScheme.primary` (dari `seedColor: Colors.indigo` di `main.dart`). Tombol **Simpan** di form edukasi juga memakai warna yang sama. Kalau seed color diganti, ketiganya ikut berubah.
+   Contoh warna tema: `AppBar` di halaman utama dan di form Tambah Pengalaman sama-sama memakai `Theme.of(context).colorScheme.primary` (dari `seedColor: Colors.indigo` di `main.dart`). Tombol **Simpan** di form pengalaman juga memakai warna yang sama. Kalau seed color diganti, ketiganya ikut berubah.
 
 3. **Tata letak form**
 
-   Form disusun satu kolom (`Column` dengan `crossAxisAlignment.stretch`), satu field per baris dari atas ke bawah, dengan tombol **Simpan** selebar layar di paling bawah. Susunan ini paling mudah dibaca dan diisi di layar ponsel yang sempit, dan urutannya mengikuti urutan pengisian (institusi, jenjang, prodi, tanggal, IPK).
+   Form disusun satu kolom (`Column` dengan `crossAxisAlignment.stretch`), satu field per baris dari atas ke bawah, dengan tombol **Simpan** selebar layar di paling bawah. Susunan ini paling mudah dibaca dan diisi di layar ponsel yang sempit, dan urutannya mengikuti urutan pengisian (judul, deskripsi, kategori, lalu status dan tanggal selesai).
    - **Widget pengatur jarak:** `Padding` di `SingleChildScrollView` memberi jarak 16 px dari tepi layar, dan `SizedBox(height: 16)` memberi jarak antar-field, jadi field tidak menempel satu sama lain dan pesan error punya ruang.
    - **Widget penggulir:** `SingleChildScrollView` membuat seluruh isi form bisa digulir. Saat papan ketik muncul, tinggi layar yang tersisa mengecil. Tanpa penggulir, field di bawah dan tombol Simpan akan tertutup atau overflow. `SafeArea` menjaga isi form tidak tertutup notch atau status bar.
 
@@ -164,7 +172,9 @@ Di Chrome: buka **Tambah Edukasi** dari kartu aksi dan dari drawer, tekan **Simp
    - `validator` adalah fungsi di tiap `TextFormField` yang mengembalikan pesan error (String) kalau input salah, atau `null` kalau benar.
    - Saat tombol **Simpan** ditekan, `_formKey.currentState!.validate()` menjalankan semua validator sekaligus. Field yang salah langsung menampilkan pesan error di bawahnya, dan `validate()` mengembalikan `false`, jadi dialog tidak ditampilkan. Dialog ringkasan hanya muncul kalau semua validator mengembalikan `null`.
 
-   Contoh nilai yang ditolak: IPK `4.5`. Field IPK memakai papan ketik angka (`TextInputType.numberWithOptions(decimal: true)`), tapi papan ketik hanya membatasi tombol yang muncul, bukan nilai yang masuk akal. Pengguna tetap bisa mengetik `4.5`, `3..2`, atau menempel teks lewat clipboard, dan di Chrome papan ketik fisik bisa mengetik huruf apa saja. Karena itu `_validateGpa` tetap memeriksa bahwa nilainya angka dan berada di rentang 0.00 sampai 4.00. Hal yang sama berlaku untuk nama institusi berisi spasi saja (`"   "`): tidak kosong secara teknis, tapi ditolak karena `trim()` membuatnya kosong.
+   Contoh nilai yang ditolak: Judul berisi spasi saja (`"   "`). Secara teknis field-nya tidak kosong, dan papan ketik teks biasa tetap mengizinkan spasi, tapi judul seperti itu tidak bermakna. Validator memakai `value.trim().isEmpty`, jadi spasi dihapus dulu sebelum dicek, dan isian ini ditolak dengan pesan "Judul tidak boleh kosong!".
+
+   Memilih jenis input saja belum cukup karena input hanya membatasi *cara* mengisi, bukan *aturan data* di model. Papan ketik tidak bisa mencegah spasi kosong, teks yang ditempel lewat clipboard, atau ketikan dari papan ketik fisik di Chrome. Date picker juga hanya menjamin formatnya tanggal, bukan urutannya. Aturan seperti "deskripsi wajib" atau "`ended_at` tidak boleh sebelum `started_at`" tetap harus diperiksa validator (`_validateEndedAt`), dan nantinya juga oleh Django saat data dikirim ke server.
 
 ---
 
@@ -196,7 +206,7 @@ log chat AI: https://drive.google.com/file/d/1QEMrrWYWgrUNR6VqchNJBVp8bKHDEykD/v
 - **Bagian yang dibantu AI:**
   - Membaca halaman soal Tugas 8 dan menyusun checklist pengerjaan.
   - Menyelesaikan TODO Tutorial 09 yang tertinggal (routing Add Project di drawer, drawer di form proyek).
-  - Membuat `education_form.dart` (field, validator, date picker, dialog ringkasan), kartu aksi, dan opsi drawer baru.
+  - Membuat `experience_form.dart` (field, validator, date picker, dialog ringkasan), kartu aksi, dan opsi drawer baru.
   - Menulis widget test di `test/widget_test.dart` dan menjalankan `flutter analyze` serta `flutter test`.
   - Menyusun draf jawaban reflektif Tugas 8 dan bagian README di atas.
 - **Strategi prompting:** memberi link soal langsung supaya AI membaca checklist dan rubrik aslinya, lalu meminta AI menguji hasilnya (widget test dan tampilan di Chrome selebar ponsel), bukan hanya menulis kode.
@@ -206,4 +216,5 @@ log chat AI: https://drive.google.com/file/d/1QEMrrWYWgrUNR6VqchNJBVp8bKHDEykD/v
 - **Bug layout lama baru ketahuan saat dites di lebar ponsel.** Widget test di 390 × 844 menunjukkan baris `InfoCard` overflow 0.3 px (lebar `MediaQuery / 3.5` ditambah margin kartu) dan label kartu 2 baris overflow. Ini sudah ada sejak Tugas 7 dan tidak terlihat di jendela lebar. Diperbaiki dengan `Expanded` dan batas baris, sehingga jawaban Tugas 7 nomor 5 tentang `MediaQuery` untuk lebar `InfoCard` sudah tidak sesuai dengan kode terbaru.
 - **Test bawaan Flutter (counter) sudah lama gagal** karena aplikasinya bukan counter lagi. AI menggantinya dengan test yang sesuai aplikasi.
 - **Asumsi tombol back.** Karena form punya drawer, `AppBar` menampilkan ikon menu, bukan panah back. Kembali ke halaman utama dilakukan lewat tombol back perangkat (`Navigator.push`) atau opsi Home di drawer, sesuai soal.
-- **Model Edukasi ditentukan sendiri.** AI tidak punya akses ke model Django portofolio saya, jadi field (institusi, jenjang, prodi, tanggal, IPK) dan aturan validasinya perlu saya cocokkan dengan model di web.
+- **AI awalnya menebak model.** Karena belum diberi lokasi proyek Django, AI sempat membuat form *Edukasi* dengan field karangan sendiri (institusi, jenjang, IPK), padahal model `Education` tidak ada di web saya. Setelah saya tunjukkan folder proyek `portfolio`, form diganti menjadi *Pengalaman* yang field dan validasinya diambil langsung dari model `Experience`.
+- **Konsekuensi `auto_now_add` di model.** `started_at` terisi otomatis saat data disimpan, jadi tanggal selesai di form tidak boleh sebelum hari ini. Ini mengikuti model apa adanya. Kalau nanti ingin mencatat pengalaman lama yang sudah selesai, model web-nya yang perlu diubah (`started_at` jadi field yang bisa diisi).
