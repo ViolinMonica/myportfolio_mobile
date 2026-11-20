@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:myportfolio_mobile/screens/education_form.dart';
+import 'package:myportfolio_mobile/screens/experience_form.dart';
 import 'package:myportfolio_mobile/screens/menu.dart';
 import 'package:myportfolio_mobile/screens/project_form.dart';
 
@@ -68,14 +68,14 @@ class LeftDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.school_outlined),
-            title: const Text('Add Education'),
-            // Navigasi ke halaman tambah edukasi
+            leading: const Icon(Icons.work_outline),
+            title: const Text('Add Experience'),
+            // Navigasi ke halaman tambah pengalaman
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const EducationFormPage(),
+                  builder: (context) => const ExperienceFormPage(),
                 ),
               );
             },
