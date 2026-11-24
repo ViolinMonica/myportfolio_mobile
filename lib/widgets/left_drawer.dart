@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myportfolio_mobile/screens/experience_form.dart';
+import 'package:myportfolio_mobile/screens/experience_list_screen.dart';
 import 'package:myportfolio_mobile/screens/menu.dart';
 import 'package:myportfolio_mobile/screens/login_screen.dart';
 import 'package:myportfolio_mobile/screens/project_form.dart';
@@ -17,10 +18,12 @@ import 'package:provider/provider.dart';
 /// - **Home** memakai [Navigator.pushReplacement]: halaman saat ini diganti
 ///   dengan halaman utama, sehingga form tidak tertinggal di tumpukan dan
 ///   tombol back tidak membuka form lama lagi.
+/// - **View Projects** / **View Experiences** membuka daftar dari API
+///   (publik, tanpa login).
 /// - **Add Project** dan **Add Experience** memakai [Navigator.push]: form
 ///   ditumpuk di atas halaman saat ini, jadi tombol back kembali ke halaman
-///   sebelumnya. **Add Project** dijaga [ensureLoggedIn], jadi pengguna
-///   yang belum login dibawa ke [LoginScreen] dulu.
+///   sebelumnya. Keduanya dijaga [ensureLoggedIn], jadi pengguna yang belum
+///   login dibawa ke [LoginScreen] dulu.
 /// - **Login** / **Logout** bergantian sesuai [AuthState.isLoggedIn]; drawer
 ///   ikut dibangun ulang karena memakai `context.watch`.
 class LeftDrawer extends StatelessWidget {
@@ -99,10 +102,24 @@ class LeftDrawer extends StatelessWidget {
             },
           ),
           ListTile(
+            leading: const Icon(Icons.work_history_outlined),
+            title: const Text('View Experiences'),
+            // Daftar pengalaman dari API, publik tanpa login.
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ExperienceListScreen(),
+                ),
+              );
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.work_outline),
             title: const Text('Add Experience'),
-            // Navigasi ke halaman tambah pengalaman
-            onTap: () {
+            // Navigasi ke halaman tambah pengalaman, setelah memastikan sudah login.
+            onTap: () async {
+              if (!await ensureLoggedIn(context) || !context.mounted) return;
               Navigator.push(
                 context,
                 MaterialPageRoute(

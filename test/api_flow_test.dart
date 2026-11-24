@@ -2,69 +2,19 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:myportfolio_mobile/main.dart';
 import 'package:myportfolio_mobile/screens/login_screen.dart';
 import 'package:myportfolio_mobile/screens/project_detail_screen.dart';
 import 'package:myportfolio_mobile/screens/project_form.dart';
 import 'package:myportfolio_mobile/services/api_client.dart';
 
+import 'helpers/fake_backend.dart';
+
 /// Alur Tutorial 10 melawan backend palsu (MockClient), tanpa server Django.
 void main() {
-  setUp(() {
-    final view =
-        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
-    view.physicalSize = const Size(390, 844);
-    view.devicePixelRatio = 1;
-  });
-
-  const projectJson = {
-    'id': '7a1c0c52-1f1b-4c4e-9a59-2f7a3c0c9b11',
-    'title': 'MyPortfolio',
-    'description': 'Website portofolio Django',
-    'tech_stack': 'Django',
-    'project_url': 'https://example.com/',
-    'project_image_url': null,
-    'star_count': 0,
-  };
-
-  /// Backend palsu: token `abc` untuk owner/secret, POST butuh token itu.
-  final requests = <http.Request>[];
-  ApiClient fakeApi() {
-    requests.clear();
-    return ApiClient(
-      baseUrl: 'http://test',
-      client: MockClient((request) async {
-        requests.add(request);
-        final path = request.url.path;
-        if (request.method == 'GET' && path == '/api/v1/projects/') {
-          return http.Response(jsonEncode([projectJson]), 200);
-        }
-        if (path == '/api/v1/auth/token/') {
-          final body = jsonDecode(request.body) as Map<String, dynamic>;
-          return body['password'] == 'secret'
-              ? http.Response(jsonEncode({'token': 'abc'}), 200)
-              : http.Response('{"non_field_errors":["bad"]}', 400);
-        }
-        if (request.headers['Authorization'] != 'Token abc') {
-          return http.Response('{"detail":"no"}', 401);
-        }
-        if (path == '/api/v1/auth/logout/') return http.Response('', 204);
-        if (request.method == 'POST' && path == '/api/v1/projects/') {
-          final body = jsonDecode(request.body) as Map<String, dynamic>;
-          return http.Response(jsonEncode({...body, 'id': 'new-id'}), 201);
-        }
-        return http.Response('', 404);
-      }),
-    );
-  }
-
-  Future<void> tapText(WidgetTester tester, String text) async {
-    await tester.ensureVisible(find.text(text).last);
-    await tester.tap(find.text(text).last);
-    await tester.pumpAndSettle();
-  }
+  usePhoneScreen();
+  late FakeBackend backend;
+  ApiClient fakeApi() => (backend = FakeBackend()).client();
 
   testWidgets('daftar proyek publik dimuat dari API dan membuka detail', (
     tester,
@@ -129,7 +79,7 @@ void main() {
     await tapText(tester, 'Save');
     expect(find.text('Proyek berhasil ditambahkan!'), findsOneWidget);
 
-    final post = requests.last;
+    final post = backend.requests.last;
     expect(post.headers['Authorization'], 'Token abc');
     expect(jsonDecode(post.body), {
       'title': 'App',
@@ -165,7 +115,7 @@ void main() {
     await tester.tap(find.widgetWithText(ListTile, 'Logout'));
     await tester.pumpAndSettle();
 
-    expect(requests.last.url.path, '/api/v1/auth/logout/');
+    expect(backend.requests.last.url.path, '/api/v1/auth/logout/');
     expect(find.widgetWithText(ListTile, 'Login'), findsOneWidget);
   });
 }
