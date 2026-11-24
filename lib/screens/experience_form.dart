@@ -77,8 +77,12 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
   /// `started_at`, yaitu hari ini karena `started_at` terisi otomatis saat disimpan.
   String? _validateEndedAt(String? _) {
     if (_ongoing) return null;
-    if (_endedAt == null) return 'Pilih tanggal selesai, atau centang "Masih berjalan"';
-    if (_endedAt!.isBefore(_today)) return 'Tanggal selesai tidak boleh sebelum tanggal mulai (hari ini)!';
+    if (_endedAt == null) {
+      return 'Pilih tanggal selesai, atau centang "Masih berjalan"';
+    }
+    if (_endedAt!.isBefore(_today)) {
+      return 'Tanggal selesai tidak boleh sebelum tanggal mulai (hari ini)!';
+    }
     return null;
   }
 
@@ -111,7 +115,9 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
               Text('Deskripsi: ${_description.trim()}'),
               Text('Kategori: ${categories[_category]}'),
               Text('Mulai: ${formatDate(_today)}'),
-              Text('Selesai: ${_ongoing ? 'Masih berjalan' : formatDate(_endedAt!)}'),
+              Text(
+                'Selesai: ${_ongoing ? 'Masih berjalan' : formatDate(_endedAt!)}',
+              ),
             ],
           ),
         ),
@@ -125,13 +131,17 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
     );
   }
 
-  InputDecoration _decoration(String label, {String? hint, Widget? suffixIcon}) => InputDecoration(
-        labelText: label,
-        hintText: hint,
-        suffixIcon: suffixIcon,
-        alignLabelWithHint: true,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(5.0)),
-      );
+  InputDecoration _decoration(
+    String label, {
+    String? hint,
+    Widget? suffixIcon,
+  }) => InputDecoration(
+    labelText: label,
+    hintText: hint,
+    suffixIcon: suffixIcon,
+    alignLabelWithHint: true,
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(5.0)),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -158,15 +168,22 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextFormField(
-                  decoration: _decoration('Judul', hint: 'Contoh: Asisten Dosen PBP'),
+                  decoration: _decoration(
+                    'Judul',
+                    hint: 'Contoh: Asisten Dosen PBP',
+                  ),
                   textInputAction: TextInputAction.next,
                   maxLength: titleMaxLength,
                   onChanged: (value) => setState(() => _title = value),
-                  validator: (value) => _requiredText(value, 'Judul', maxLength: titleMaxLength),
+                  validator: (value) =>
+                      _requiredText(value, 'Judul', maxLength: titleMaxLength),
                 ),
                 gap,
                 TextFormField(
-                  decoration: _decoration('Deskripsi', hint: 'Apa yang kamu kerjakan dan pelajari?'),
+                  decoration: _decoration(
+                    'Deskripsi',
+                    hint: 'Apa yang kamu kerjakan dan pelajari?',
+                  ),
                   keyboardType: TextInputType.multiline,
                   minLines: 3,
                   maxLines: 6,
@@ -178,7 +195,12 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                   decoration: _decoration('Kategori'),
                   initialValue: _category,
                   items: categories.entries
-                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e.key,
+                          child: Text(e.value),
+                        ),
+                      )
                       .toList(),
                   onChanged: (value) => setState(() => _category = value!),
                 ),
@@ -187,7 +209,9 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                   contentPadding: EdgeInsets.zero,
                   controlAffinity: ListTileControlAffinity.leading,
                   title: const Text('Masih berjalan'),
-                  subtitle: const Text('Tanggal mulai terisi otomatis saat disimpan'),
+                  subtitle: const Text(
+                    'Tanggal mulai terisi otomatis saat disimpan',
+                  ),
                   value: _ongoing,
                   onChanged: (value) => setState(() => _ongoing = value!),
                 ),
@@ -195,8 +219,11 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                   TextFormField(
                     controller: _endedController,
                     readOnly: true,
-                    decoration: _decoration('Tanggal Selesai',
-                        hint: 'Pilih tanggal', suffixIcon: const Icon(Icons.event_available)),
+                    decoration: _decoration(
+                      'Tanggal Selesai',
+                      hint: 'Pilih tanggal',
+                      suffixIcon: const Icon(Icons.event_available),
+                    ),
                     onTap: _pickEndedAt,
                     validator: _validateEndedAt,
                   ),

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:myportfolio_mobile/screens/experience_form.dart';
 import 'package:myportfolio_mobile/screens/project_form.dart';
+import 'package:myportfolio_mobile/screens/project_list_screen.dart';
+import 'package:myportfolio_mobile/services/auth_state.dart';
+import 'package:provider/provider.dart';
 import 'package:myportfolio_mobile/widgets/left_drawer.dart';
 import 'package:myportfolio_mobile/widgets/project_card.dart';
+
 /// Halaman utama MyPortfolio: kartu identitas pemilik di atas
 /// dan kisi tombol aksi portofolio di bawahnya.
 class MyHomePage extends StatelessWidget {
@@ -12,27 +16,52 @@ class MyHomePage extends StatelessWidget {
   final String kelas = "PBP B";
 
   final List<ItemHomepage> items = [
-      ItemHomepage("Lihat Proyek", Icons.folder, Colors.blue),
-      ItemHomepage("Tambah Proyek", Icons.add_circle, Colors.green,
-          page: () => const ProjectFormPage()),
-      ItemHomepage("Tambah Pengalaman", Icons.work, Colors.orange,
-          page: () => const ExperienceFormPage()),
-      ItemHomepage("Logout", Icons.logout, Colors.red),
+    ItemHomepage(
+      "Lihat Proyek",
+      Icons.folder,
+      Colors.blue,
+      page: () => const ProjectListScreen(),
+    ),
+    ItemHomepage(
+      "Tambah Proyek",
+      Icons.add_circle,
+      Colors.green,
+      page: () => const ProjectFormPage(),
+      requiresLogin: true,
+    ),
+    ItemHomepage(
+      "Tambah Pengalaman",
+      Icons.work,
+      Colors.orange,
+      page: () => const ExperienceFormPage(),
+    ),
+    ItemHomepage("Logout", Icons.logout, Colors.red, onTap: _logout),
   ];
+  static Future<void> _logout(BuildContext context) async {
+    final auth = context.read<AuthState>();
+    final wasLoggedIn = auth.isLoggedIn;
+    await auth.logout();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(wasLoggedIn ? 'Berhasil logout.' : 'Kamu belum login.'),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Scaffold menyediakan struktur visual dasar halaman (AppBar, Body, SnackBar).
     return Scaffold(
       appBar: AppBar(
-          title: const Text(
-            'MyPortfolio',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          iconTheme: const IconThemeData(color: Colors.white)
+        title: const Text(
+          'MyPortfolio',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       drawer: const LeftDrawer(),
       // Body halaman utama dengan padding di sekelilingnya. Bisa digulir supaya
@@ -46,9 +75,15 @@ class MyHomePage extends StatelessWidget {
             // Expanded membagi lebar sama rata, jadi tidak overflow di layar 390 px.
             Row(
               children: [
-                Expanded(child: InfoCard(title: 'NPM', content: npm)),
-                Expanded(child: InfoCard(title: 'Name', content: nama)),
-                Expanded(child: InfoCard(title: 'Class', content: kelas)),
+                Expanded(
+                  child: InfoCard(title: 'NPM', content: npm),
+                ),
+                Expanded(
+                  child: InfoCard(title: 'Name', content: nama),
+                ),
+                Expanded(
+                  child: InfoCard(title: 'Class', content: kelas),
+                ),
               ],
             ),
 
@@ -82,7 +117,9 @@ class MyHomePage extends StatelessWidget {
                         padding: const EdgeInsets.all(20),
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
-                        crossAxisCount: layarKecil ? 3 : 1,     // kecil: jejer (row), lebar: numpuk (column)
+                        crossAxisCount: layarKecil
+                            ? 3
+                            : 1, // kecil: jejer (row), lebar: numpuk (column)
                         childAspectRatio: layarKecil ? 0.85 : 5, // kecil: sedikit lebih tinggi agar label 2 baris muat
                         shrinkWrap: true,
                         children: items.map((ItemHomepage item) {
@@ -120,10 +157,7 @@ class InfoCard extends StatelessWidget {
         // Menyusun teks title dan content secara vertikal.
         child: Column(
           children: [
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8.0),
             Text(content, textAlign: TextAlign.center),
           ],
@@ -147,10 +181,23 @@ class ItemHomepage {
   final Color color;
 
   /// Pembuat halaman yang dibuka saat kartu ditekan, atau `null` kalau tombol
-  /// hanya menampilkan SnackBar (mis. Lihat Proyek dan Logout yang belum punya
-  /// halaman). Berupa fungsi, bukan widget jadi, supaya halaman baru dibuat
+  /// tidak membuka halaman. Berupa fungsi, bukan widget jadi, supaya halaman baru dibuat
   /// saat kartu ditekan dan form selalu mulai dalam keadaan kosong.
   final Widget Function()? page;
 
-  ItemHomepage(this.name, this.icon, this.color, {this.page});
+  /// Kalau `true`, [page] baru dibuka setelah `ensureLoggedIn` berhasil.
+  final bool requiresLogin;
+
+  /// Aksi khusus pengganti navigasi (mis. Logout). Kalau diisi, [page]
+  /// diabaikan.
+  final Future<void> Function(BuildContext context)? onTap;
+
+  ItemHomepage(
+    this.name,
+    this.icon,
+    this.color, {
+    this.page,
+    this.requiresLogin = false,
+    this.onTap,
+  });
 }

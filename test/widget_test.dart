@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import 'package:myportfolio_mobile/main.dart';
 import 'package:myportfolio_mobile/screens/experience_form.dart';
 import 'package:myportfolio_mobile/screens/menu.dart';
+import 'package:myportfolio_mobile/services/api_client.dart';
 
 /// Skenario dari "Petunjuk Pengujian" Tugas 8, dijalankan di layar selebar ponsel.
 void main() {
+  // Skenario ini tidak memanggil API; request apa pun dijawab 404.
+  final offlineApi = ApiClient(
+    client: MockClient((_) async => http.Response('', 404)),
+  );
+
   setUp(() {
-    final view = TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
     view.physicalSize = const Size(390, 844);
     view.devicePixelRatio = 1;
   });
@@ -20,29 +29,37 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('kartu aksi membuka form Pengalaman dan tombol back perangkat kembali ke Home', (tester) async {
-    await tester.pumpWidget(const MyApp());
-    await tester.tap(find.text('Tambah Pengalaman'));
-    await tester.pumpAndSettle();
-    expect(find.byType(ExperienceFormPage), findsOneWidget);
+  testWidgets(
+    'kartu aksi membuka form Pengalaman dan tombol back perangkat kembali ke Home',
+    (tester) async {
+      await tester.pumpWidget(MyApp(apiClient: offlineApi));
+      await tester.tap(find.text('Tambah Pengalaman'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ExperienceFormPage), findsOneWidget);
 
-    // Simulasi tombol back bawaan Android (AppBar menampilkan ikon drawer, bukan panah).
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
-    expect(find.byType(MyHomePage), findsOneWidget);
-  });
+      // Simulasi tombol back bawaan Android (AppBar menampilkan ikon drawer, bukan panah).
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(MyHomePage), findsOneWidget);
+    },
+  );
 
-  testWidgets('drawer membuka form Pengalaman dan opsi Home kembali ke halaman utama', (tester) async {
-    await tester.pumpWidget(const MyApp());
-    await openDrawerItem(tester, 'Add Experience');
-    expect(find.byType(ExperienceFormPage), findsOneWidget);
+  testWidgets(
+    'drawer membuka form Pengalaman dan opsi Home kembali ke halaman utama',
+    (tester) async {
+      await tester.pumpWidget(MyApp(apiClient: offlineApi));
+      await openDrawerItem(tester, 'Add Experience');
+      expect(find.byType(ExperienceFormPage), findsOneWidget);
 
-    await openDrawerItem(tester, 'Home');
-    expect(find.byType(MyHomePage), findsOneWidget);
-    expect(find.byType(ExperienceFormPage), findsNothing);
-  });
+      await openDrawerItem(tester, 'Home');
+      expect(find.byType(MyHomePage), findsOneWidget);
+      expect(find.byType(ExperienceFormPage), findsNothing);
+    },
+  );
 
-  testWidgets('input tidak valid ditolak, input valid tampil di dialog', (tester) async {
+  testWidgets('input tidak valid ditolak, input valid tampil di dialog', (
+    tester,
+  ) async {
     await tester.pumpWidget(const MaterialApp(home: ExperienceFormPage()));
     final simpan = find.text('Simpan');
     final judul = find.widgetWithText(TextFormField, 'Judul');
@@ -57,7 +74,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Judul tidak boleh kosong!'), findsOneWidget);
     expect(find.text('Deskripsi tidak boleh kosong!'), findsOneWidget);
-    expect(find.text('Pilih tanggal selesai, atau centang "Masih berjalan"'), findsOneWidget);
+    expect(
+      find.text('Pilih tanggal selesai, atau centang "Masih berjalan"'),
+      findsOneWidget,
+    );
     expect(find.byType(AlertDialog), findsNothing);
 
     // Lengkapi isian dan pilih tanggal selesai (default date picker: hari ini).
