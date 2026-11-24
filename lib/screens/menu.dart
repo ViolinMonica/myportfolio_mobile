@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myportfolio_mobile/screens/experience_form.dart';
+import 'package:myportfolio_mobile/screens/experience_list_screen.dart';
 import 'package:myportfolio_mobile/screens/project_form.dart';
 import 'package:myportfolio_mobile/screens/project_list_screen.dart';
 import 'package:myportfolio_mobile/services/auth_state.dart';
@@ -30,10 +31,17 @@ class MyHomePage extends StatelessWidget {
       requiresLogin: true,
     ),
     ItemHomepage(
+      "Lihat Pengalaman",
+      Icons.work_history,
+      Colors.purple,
+      page: () => const ExperienceListScreen(),
+    ),
+    ItemHomepage(
       "Tambah Pengalaman",
       Icons.work,
       Colors.orange,
       page: () => const ExperienceFormPage(),
+      requiresLogin: true,
     ),
     ItemHomepage("Logout", Icons.logout, Colors.red, onTap: _logout),
   ];

@@ -1,22 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:myportfolio_mobile/models/experience.dart';
+import 'package:myportfolio_mobile/services/api_client.dart';
+import 'package:myportfolio_mobile/services/auth_state.dart';
+import 'package:myportfolio_mobile/widgets/api_error.dart';
+import 'package:myportfolio_mobile/widgets/auth_guard.dart';
 import 'package:myportfolio_mobile/widgets/left_drawer.dart';
+import 'package:provider/provider.dart';
 
-/// Halaman formulir Tambah Pengalaman, mengikuti model Django `Experience`
-/// di proyek web portofolio (`main/models.py`).
+/// Formulir Tambah/Edit Pengalaman, mengikuti `ExperienceSerializer` Django.
 ///
-/// | Field model   | Input di form                           |
+/// | Field API     | Input di form                           |
 /// |---------------|-----------------------------------------|
 /// | `title`       | TextFormField, wajib, maks. 255         |
 /// | `description` | TextFormField multi-baris, wajib        |
 /// | `category`    | Dropdown dari `EXPERIENCE_CHOICES`      |
 /// | `ended_at`    | showDatePicker, kosong = masih berjalan |
 ///
-/// `started_at` memakai `auto_now_add` (terisi otomatis saat disimpan), jadi
-/// tidak ada di form. Akibatnya tanggal selesai tidak boleh sebelum hari ini.
-/// Saat Simpan ditekan, [FormState.validate] menjalankan semua validator;
-/// ringkasan isian hanya muncul di dialog kalau semuanya lolos.
+/// Tanpa [initial], Simpan mengirim `POST /api/v1/experiences/`. Dengan
+/// [initial], form terisi data lama dan Simpan mengirim `PATCH` ke entri itu.
+/// Keduanya butuh token, jadi [ensureLoggedIn] membuka layar login dulu kalau
+/// belum masuk. Setelah berhasil, tombol OK menutup form dan mengembalikan
+/// [Experience] hasil simpan ke halaman pemanggil.
+///
+/// `started_at` diisi server saat dibuat, jadi tanggal selesai tidak boleh
+/// sebelum tanggal mulai (hari ini untuk entri baru).
 class ExperienceFormPage extends StatefulWidget {
-  const ExperienceFormPage({super.key});
+  const ExperienceFormPage({this.initial, super.key});
+
+  /// Entri yang sedang diedit, atau `null` untuk entri baru.
+  final Experience? initial;
 
   @override
   State<ExperienceFormPage> createState() => _ExperienceFormPageState();
@@ -25,27 +37,22 @@ class ExperienceFormPage extends StatefulWidget {
 class _ExperienceFormPageState extends State<ExperienceFormPage> {
   final _formKey = GlobalKey<FormState>();
 
-  /// `title = models.CharField(max_length=255)`
-  static const int titleMaxLength = 255;
+  late String _title = widget.initial?.title ?? '';
+  late String _description = widget.initial?.description ?? '';
+  late String _category =
+      widget.initial?.category ?? Experience.defaultCategory;
 
-  /// `EXPERIENCE_CHOICES`: nilai yang disimpan → label yang ditampilkan.
-  static const Map<String, String> categories = {
-    'internship': 'Internship',
-    'research': 'Research',
-    'volunteer': 'Volunteer',
-    'part-time': 'Part-Time',
-    'full-time': 'Full-Time',
-    'freelance': 'Freelance',
-  };
-
-  String _title = '';
-  String _description = '';
-  String _category = 'full-time'; // default di model
-  DateTime? _endedAt;
-  bool _ongoing = true; // ended_at kosong = masih berjalan
+  /// Tanggal selesai sebagai tanggal kalender lokal (tanpa jam).
+  late DateTime? _endedAt = _dateOnly(widget.initial?.endedAt);
+  late bool _ongoing = widget.initial?.isOngoing ?? true;
+  bool _isSubmitting = false;
 
   // Controller hanya untuk menampilkan tanggal terpilih di field read-only.
-  final _endedController = TextEditingController();
+  late final _endedController = TextEditingController(
+    text: _endedAt == null ? '' : formatDate(_endedAt!),
+  );
+
+  bool get _isEditing => widget.initial != null;
 
   @override
   void dispose() {
@@ -53,14 +60,13 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
     super.dispose();
   }
 
-  /// Format tanggal dd/mm/yyyy tanpa package tambahan.
-  static String formatDate(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+  static DateTime? _dateOnly(DateTime? d) =>
+      d == null ? null : DateTime(d.year, d.month, d.day);
 
-  static DateTime get _today {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day);
-  }
+  /// Tanggal mulai: dari server saat edit, atau hari ini untuk entri baru.
+  DateTime get _startDate =>
+      _dateOnly(widget.initial?.startedAt?.toLocal()) ??
+      _dateOnly(DateTime.now())!;
 
   /// Validator teks wajib: tolak kosong / hanya spasi, dan batasi panjang bila ada.
   String? _requiredText(String? value, String label, {int? maxLength}) {
@@ -73,25 +79,28 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
     return null;
   }
 
-  /// `ended_at` boleh kosong (masih berjalan). Kalau diisi, tidak boleh sebelum
-  /// `started_at`, yaitu hari ini karena `started_at` terisi otomatis saat disimpan.
+  /// `ended_at` boleh kosong (masih berjalan). Kalau diisi, tidak boleh
+  /// sebelum `started_at`. Server memeriksa aturan yang sama.
   String? _validateEndedAt(String? _) {
     if (_ongoing) return null;
     if (_endedAt == null) {
       return 'Pilih tanggal selesai, atau centang "Masih berjalan"';
     }
-    if (_endedAt!.isBefore(_today)) {
-      return 'Tanggal selesai tidak boleh sebelum tanggal mulai (hari ini)!';
+    if (_endedAt!.isBefore(_startDate)) {
+      return 'Tanggal selesai tidak boleh sebelum tanggal mulai '
+          '(${formatDate(_startDate)})!';
     }
     return null;
   }
 
   Future<void> _pickEndedAt() async {
+    final today = _dateOnly(DateTime.now())!;
     final picked = await showDatePicker(
       context: context,
-      initialDate: _endedAt ?? _today,
-      firstDate: _today,
-      lastDate: DateTime(_today.year + 10),
+      initialDate:
+          _endedAt ?? (today.isBefore(_startDate) ? _startDate : today),
+      firstDate: _startDate,
+      lastDate: DateTime(today.year + 10),
     );
     if (picked == null) return;
     setState(() {
@@ -100,23 +109,67 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
     });
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    showDialog(
+    if (!await ensureLoggedIn(context) || !mounted) return;
+
+    final ended = _ongoing ? null : _endedAt!;
+    final experience = Experience(
+      title: _title.trim(),
+      description: _description.trim(),
+      category: _category,
+      // Tengah malam UTC dari tanggal yang dipilih: tanggalnya tidak bergeser
+      // saat disimpan Django (USE_TZ = True, TIME_ZONE = 'UTC').
+      endedAt: ended == null
+          ? null
+          : DateTime.utc(ended.year, ended.month, ended.day),
+    );
+    final api = context.read<ApiClient>();
+    final token = context.read<AuthState>().token!;
+
+    setState(() => _isSubmitting = true);
+    Experience? saved;
+    try {
+      saved = _isEditing
+          ? await api.updateExperience(
+              widget.initial!.id!,
+              experience,
+              token: token,
+            )
+          : await api.createExperience(experience, token: token);
+    } on ApiException catch (e) {
+      if (mounted) {
+        await handleApiError(context, e, action: 'menyimpan pengalaman');
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+    // Spinner sudah berhenti sebelum dialog muncul.
+    if (saved != null && mounted) await _showSuccess(saved);
+  }
+
+  Future<void> _showSuccess(Experience saved) async {
+    await showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Pengalaman berhasil disimpan!'),
+        title: Text(
+          _isEditing
+              ? 'Pengalaman berhasil diperbarui!'
+              : 'Pengalaman berhasil disimpan!',
+        ),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Judul: ${_title.trim()}'),
-              Text('Deskripsi: ${_description.trim()}'),
-              Text('Kategori: ${categories[_category]}'),
-              Text('Mulai: ${formatDate(_today)}'),
+              Text('Judul: ${saved.title}'),
+              Text('Deskripsi: ${saved.description}'),
+              Text('Kategori: ${saved.categoryLabel}'),
+              if (saved.startedAt != null)
+                Text('Mulai: ${formatDate(saved.startedAt!.toLocal())}'),
               Text(
-                'Selesai: ${_ongoing ? 'Masih berjalan' : formatDate(_endedAt!)}',
+                'Selesai: ${saved.isOngoing ? 'Masih berjalan' : formatDate(saved.endedAt!)}',
               ),
             ],
           ),
@@ -129,6 +182,8 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
         ],
       ),
     );
+    // Kembali ke halaman sebelumnya (daftar/detail) dengan data hasil simpan.
+    if (mounted) Navigator.pop(context, saved);
   }
 
   InputDecoration _decoration(
@@ -148,15 +203,16 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
     const gap = SizedBox(height: 16);
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Tambah Pengalaman',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          _isEditing ? 'Edit Pengalaman' : 'Tambah Pengalaman',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         // Warna sama dengan AppBar halaman utama (warna primer tema).
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
       ),
-      drawer: const LeftDrawer(),
+      // Saat edit, tombol back lebih jelas daripada drawer.
+      drawer: _isEditing ? null : const LeftDrawer(),
       body: Form(
         key: _formKey,
         // SafeArea + SingleChildScrollView supaya semua field dan tombol Simpan
@@ -168,18 +224,23 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextFormField(
+                  initialValue: _title,
                   decoration: _decoration(
                     'Judul',
                     hint: 'Contoh: Asisten Dosen PBP',
                   ),
                   textInputAction: TextInputAction.next,
-                  maxLength: titleMaxLength,
-                  onChanged: (value) => setState(() => _title = value),
-                  validator: (value) =>
-                      _requiredText(value, 'Judul', maxLength: titleMaxLength),
+                  maxLength: Experience.titleMaxLength,
+                  onChanged: (value) => _title = value,
+                  validator: (value) => _requiredText(
+                    value,
+                    'Judul',
+                    maxLength: Experience.titleMaxLength,
+                  ),
                 ),
                 gap,
                 TextFormField(
+                  initialValue: _description,
                   decoration: _decoration(
                     'Deskripsi',
                     hint: 'Apa yang kamu kerjakan dan pelajari?',
@@ -187,14 +248,14 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                   keyboardType: TextInputType.multiline,
                   minLines: 3,
                   maxLines: 6,
-                  onChanged: (value) => setState(() => _description = value),
+                  onChanged: (value) => _description = value,
                   validator: (value) => _requiredText(value, 'Deskripsi'),
                 ),
                 gap,
                 DropdownButtonFormField<String>(
                   decoration: _decoration('Kategori'),
                   initialValue: _category,
-                  items: categories.entries
+                  items: Experience.categories.entries
                       .map(
                         (e) => DropdownMenuItem(
                           value: e.key,
@@ -209,8 +270,10 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                   contentPadding: EdgeInsets.zero,
                   controlAffinity: ListTileControlAffinity.leading,
                   title: const Text('Masih berjalan'),
-                  subtitle: const Text(
-                    'Tanggal mulai terisi otomatis saat disimpan',
+                  subtitle: Text(
+                    _isEditing
+                        ? 'Mulai ${formatDate(_startDate)}'
+                        : 'Tanggal mulai terisi otomatis saat disimpan',
                   ),
                   value: _ongoing,
                   onChanged: (value) => setState(() => _ongoing = value!),
@@ -234,8 +297,14 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  onPressed: _save,
-                  icon: const Icon(Icons.save),
+                  onPressed: _isSubmitting ? null : _save,
+                  icon: _isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save),
                   label: const Text('Simpan'),
                 ),
               ],
