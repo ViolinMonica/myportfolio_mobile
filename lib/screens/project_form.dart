@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myportfolio_mobile/models/project.dart';
 import 'package:myportfolio_mobile/services/api_client.dart';
 import 'package:myportfolio_mobile/services/auth_state.dart';
+import 'package:myportfolio_mobile/widgets/api_error.dart';
 import 'package:myportfolio_mobile/widgets/auth_guard.dart';
 import 'package:myportfolio_mobile/widgets/left_drawer.dart';
 import 'package:provider/provider.dart';
@@ -71,29 +72,13 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
         token: auth.token!,
       );
     } on ApiException catch (e) {
-      if (!mounted) return;
-      if (e.statusCode == 401) {
-        // Token sudah dicabut/kedaluwarsa: hapus, lalu minta login ulang.
-        await auth.logout();
-        if (!mounted) return;
-        _showError('Sesi berakhir, silakan login lagi.');
-        await ensureLoggedIn(context);
-      } else if (e.statusCode == 403) {
-        _showError('Akun ini tidak punya izin menambah proyek.');
-      } else {
-        _showError('Gagal menyimpan proyek (${e.statusCode}).');
-      }
+      // 401: sesi dihapus lalu diminta login ulang (lihat handleApiError).
+      if (mounted) await handleApiError(context, e, action: 'menambah proyek');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
     // Spinner sudah berhenti sebelum dialog muncul.
     if (created != null && mounted) await _showSuccess(created);
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _showSuccess(Project project) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myportfolio_mobile/models/project.dart';
 import 'package:myportfolio_mobile/screens/project_detail_screen.dart';
 import 'package:myportfolio_mobile/services/api_client.dart';
+import 'package:myportfolio_mobile/widgets/api_list_view.dart';
 import 'package:myportfolio_mobile/widgets/left_drawer.dart';
 import 'package:provider/provider.dart';
 
@@ -28,7 +29,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     setState(() {
       _projectsFuture = future;
     });
-    await future;
+    // Error sudah ditampilkan FutureBuilder; jangan dilempar ulang ke RefreshIndicator.
+    await future.then<void>((_) {}, onError: (_) {});
   }
 
   @override
@@ -40,84 +42,31 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         foregroundColor: Colors.white,
       ),
       drawer: const LeftDrawer(),
-      body: FutureBuilder<List<Project>>(
+      body: ApiListView<Project>(
         future: _projectsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Failed to load projects: ${snapshot.error}',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      onPressed: _reload,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-          final projects = snapshot.data ?? const <Project>[];
-          if (projects.isEmpty) {
-            // Tetap bisa ditarik untuk refresh walau daftar kosong.
-            return RefreshIndicator(
-              onRefresh: _reload,
-              child: LayoutBuilder(
-                builder: (context, constraints) => SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: SizedBox(
-                    height: constraints.maxHeight,
-                    child: const Center(child: Text('No projects found.')),
-                  ),
-                ),
-              ),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: _reload,
-            child: ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(8),
-              itemCount: projects.length,
-              itemBuilder: (context, index) {
-                final project = projects[index];
-                return Card(
-                  child: ListTile(
-                    title: Text(
-                      project.title,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(
-                      '${project.techStack}\n${project.description}',
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    isThreeLine: true,
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ProjectDetailScreen(project: project),
-                      ),
-                    ),
-                  ),
-                );
-              },
+        onRefresh: _reload,
+        itemName: 'projects',
+        itemBuilder: (context, project) => Card(
+          child: ListTile(
+            title: Text(
+              project.title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-          );
-        },
+            subtitle: Text(
+              '${project.techStack}\n${project.description}',
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            isThreeLine: true,
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProjectDetailScreen(project: project),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
