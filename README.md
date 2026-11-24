@@ -73,6 +73,8 @@ Cek token: kirim `POST http://localhost:8000/api/v1/auth/token/` dengan body JSO
 - **build** (`VeryGoodOpenSource/very_good_workflows` `flutter_package.yml@v2`): `build_runner`, cek format, `flutter analyze`, `flutter test --coverage`.
 - **build_apk** (hanya setelah `build` hijau): `flutter build apk --release`, lalu mengunggah artefak **`app-release-apk`** yang bisa diunduh dari halaman run di tab Actions.
 
+Versi Flutter di CI di-pin ke **3.47.9**, sama dengan versi pengembangan lokal. Run pertama Tutorial 10 gagal di langkah Analyze karena CI memakai stable terbaru (3.50.1, rilis setelah kode ditulis), sementara secara lokal analyzer bersih. Dengan pin, hasil CI hanya berubah kalau kodenya berubah. Upgrade Flutter dilakukan sengaja: ubah versi di `main.yaml`, jalankan `flutter analyze` lalu perbaiki temuannya.
+
 ## Progres Mingguan
 
 | Minggu | Isi |
