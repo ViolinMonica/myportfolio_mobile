@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:myportfolio_mobile/screens/experience_form.dart';
 import 'package:myportfolio_mobile/screens/menu.dart';
+import 'package:myportfolio_mobile/screens/login_screen.dart';
 import 'package:myportfolio_mobile/screens/project_form.dart';
+import 'package:myportfolio_mobile/screens/project_list_screen.dart';
+import 'package:myportfolio_mobile/services/auth_state.dart';
+import 'package:myportfolio_mobile/widgets/auth_guard.dart';
+import 'package:provider/provider.dart';
 
 /// Drawer navigasi yang dipakai bersama oleh semua halaman
 /// (halaman utama, form Proyek, dan form Pengalaman).
@@ -14,12 +19,16 @@ import 'package:myportfolio_mobile/screens/project_form.dart';
 ///   tombol back tidak membuka form lama lagi.
 /// - **Add Project** dan **Add Experience** memakai [Navigator.push]: form
 ///   ditumpuk di atas halaman saat ini, jadi tombol back kembali ke halaman
-///   sebelumnya.
+///   sebelumnya. **Add Project** dijaga [ensureLoggedIn], jadi pengguna
+///   yang belum login dibawa ke [LoginScreen] dulu.
+/// - **Login** / **Logout** bergantian sesuai [AuthState.isLoggedIn]; drawer
+///   ikut dibangun ulang karena memakai `context.watch`.
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isLoggedIn = context.watch<AuthState>().isLoggedIn;
     return Drawer(
       child: ListView(
         children: [
@@ -46,10 +55,7 @@ class LeftDrawer extends StatelessWidget {
                   'Explore personal projects and experiences!',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 15, color: Colors.white),
                 ),
               ],
             ),
@@ -61,8 +67,19 @@ class LeftDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pushReplacement(
                 context,
+                MaterialPageRoute(builder: (context) => MyHomePage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.folder_outlined),
+            title: const Text('View Projects'),
+            // Daftar proyek dari API, publik tanpa login.
+            onTap: () {
+              Navigator.push(
+                context,
                 MaterialPageRoute(
-                  builder: (context) => MyHomePage(),
+                  builder: (context) => const ProjectListScreen(),
                 ),
               );
             },
@@ -70,8 +87,9 @@ class LeftDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.add_circle_outline),
             title: const Text('Add Project'),
-            // Navigasi ke halaman tambah proyek
-            onTap: () {
+            // Navigasi ke halaman tambah proyek, setelah memastikan sudah login.
+            onTap: () async {
+              if (!await ensureLoggedIn(context) || !context.mounted) return;
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -93,6 +111,24 @@ class LeftDrawer extends StatelessWidget {
               );
             },
           ),
+          const Divider(),
+          if (!isLoggedIn)
+            ListTile(
+              leading: const Icon(Icons.login),
+              title: const Text('Login'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              },
+            )
+          else
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () => context.read<AuthState>().logout(),
+            ),
         ],
       ),
     );

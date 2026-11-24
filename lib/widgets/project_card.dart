@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:myportfolio_mobile/screens/menu.dart';
+import 'package:myportfolio_mobile/widgets/auth_guard.dart';
 
 /// Kartu tombol aksi di kisi halaman utama.
 ///
 /// Tampilan dan perilaku kartu sepenuhnya ditentukan oleh [ItemHomepage]:
 /// warna latar, ikon, label, dan halaman tujuan. Saat ditekan, kartu
 /// menampilkan SnackBar dengan warna dan ikon yang sama, lalu membuka
-/// `item.page` (kalau ada) dengan [Navigator.push].
+/// `item.page` (kalau ada) dengan [Navigator.push]. Kartu dengan
+/// `item.onTap` (mis. Logout) menjalankan aksi itu saja, dan kartu dengan
+/// `item.requiresLogin` meminta login dulu lewat [ensureLoggedIn].
 class ItemCard extends StatelessWidget {
   final ItemHomepage item;
 
@@ -22,7 +25,12 @@ class ItemCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         // Aksi ketika kartu ditekan oleh pengguna.
-        onTap: () {
+        onTap: () async {
+          final action = item.onTap;
+          if (action != null) {
+            await action(context);
+            return;
+          }
           // Tutup SnackBar sebelumnya agar pesan baru langsung muncul,
           // lalu tampilkan SnackBar melayang dengan warna dan ikon tombol terkait.
           ScaffoldMessenger.of(context)
@@ -50,7 +58,9 @@ class ItemCard extends StatelessWidget {
           // Navigator.push() menumpuk halaman baru di atas halaman utama,
           // jadi pengguna bisa kembali dengan tombol back bawaan perangkat.
           final page = item.page;
-          if (page != null) {
+          if (page == null) return;
+          if (item.requiresLogin && !await ensureLoggedIn(context)) return;
+          if (context.mounted) {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => page()),
@@ -63,11 +73,7 @@ class ItemCard extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  item.icon,
-                  color: Colors.white,
-                  size: 30.0,
-                ),
+                Icon(item.icon, color: Colors.white, size: 30.0),
                 const Padding(padding: EdgeInsets.all(3)),
                 Flexible(
                   child: Text(
